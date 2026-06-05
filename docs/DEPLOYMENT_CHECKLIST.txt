@@ -1,0 +1,289 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                      TRADINGVIEW INTEGRATION CHECKLIST                        ║
+║                        C:\StockData\ Deployment                              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+STEP 1: BACKUP EXISTING FILES (SAFETY FIRST)
+─────────────────────────────────────────────────────────────────────────────
+
+ □ Open PowerShell in C:\StockData\
+ □ Run:
+     copy edge_pro.py edge_pro_BACKUP.py
+     copy nightly_download.py nightly_download_BACKUP.py
+ □ Verify backups created:
+     dir edge_pro_BACKUP.py
+     dir nightly_download_BACKUP.py
+ □ ✓ Backups complete
+
+Time: 1-2 minutes
+
+
+STEP 2: INSTALL TRADINGVIEW DEPENDENCY
+─────────────────────────────────────────────────────────────────────────────
+
+ □ In PowerShell, run:
+     cd C:\StockData
+     uv pip install tvDatafeed --break-system-packages
+ 
+ □ Wait for completion (look for "Installed 1 package in XXs")
+ 
+ □ Verify installation:
+     python -c "from tvDatafeed import TvDatafeed; print('✓ tvDatafeed OK')"
+ 
+ □ Expected output: ✓ tvDatafeed OK
+ 
+ □ ✓ Dependency installed
+
+Time: 1-2 minutes
+
+
+STEP 3: COPY NEW/MODIFIED FILES
+─────────────────────────────────────────────────────────────────────────────
+
+Download package contents and copy these files to C:\StockData\:
+
+ □ Copy: tradingview_client.py (NEW FILE)
+    Source: tradingview_client.py
+    Dest:   C:\StockData\tradingview_client.py
+ 
+ □ Replace: edge_pro.py (MODIFIED)
+    Source: edge_pro_modified.py
+    Dest:   C:\StockData\edge_pro.py
+    Command: copy edge_pro_modified.py edge_pro.py
+ 
+ □ Replace: nightly_download.py (MODIFIED)
+    Source: nightly_download_modified.py
+    Dest:   C:\StockData\nightly_download.py
+    Command: copy nightly_download_modified.py nightly_download.py
+ 
+ □ Verify files:
+     dir /b tradingview_client.py edge_pro.py nightly_download.py
+
+Expected output:
+     edge_pro.py
+     nightly_download.py
+     tradingview_client.py
+
+ □ ✓ Files copied
+
+Time: 1-2 minutes
+
+
+STEP 4: VERIFY INSTALLATION
+─────────────────────────────────────────────────────────────────────────────
+
+ □ Test import in PowerShell:
+     python -c "from tradingview_client import TradingViewClient; print('✓ Client OK')"
+ 
+ □ Expected output: ✓ Client OK
+ 
+ □ Check Edge Pro syntax:
+     python -m py_compile edge_pro.py
+ 
+ □ Check nightly_download syntax:
+     python -m py_compile nightly_download.py
+ 
+ □ No errors should appear
+ 
+ □ ✓ Verification complete
+
+Time: 1-2 minutes
+
+
+STEP 5: TEST EDGE PRO WITH TRADINGVIEW TAB
+─────────────────────────────────────────────────────────────────────────────
+
+ □ Launch Edge Pro:
+     cd C:\StockData
+     uv run edge_pro.py
+ 
+ □ Wait for startup (15-30 seconds)
+ 
+ □ Verify all tabs appear:
+     ☐ Dashboard
+     ☐ Screener
+     ☐ RS Analyser (55d)
+     ☐ Risk & Position Sizer
+     ☐ Nightly Download
+     ☐ TradingView Screener  ← NEW TAB (check this!)
+ 
+ □ Click on "TradingView Screener" tab
+ 
+ □ Verify controls visible:
+     ☐ Market selector dropdown (set to "NSE")
+     ☐ Symbols input field (shows: "RELIANCE,INFY,HDFC,ITC,BAJAJFINSV")
+     ☐ "Fetch Data" button
+     ☐ "Export CSV" button
+     ☐ Empty Treeview (table area)
+ 
+ □ ✓ Edge Pro loads successfully with TradingView tab
+
+Time: 1-2 minutes
+
+
+STEP 6: TEST DATA FETCH
+─────────────────────────────────────────────────────────────────────────────
+
+ □ In TradingView Screener tab, click "Fetch Data" button
+ 
+ □ Watch status label (bottom right):
+     • Changes to "Fetching..." (orange)
+     • Changes to "Fetched 5 symbols" (green) after ~15-20 seconds
+ 
+ □ Data appears in table:
+     Symbol  | Close   | RSI  | MACD   | SMA20 | SMA50 | SMA200 | ATR  | Timestamp
+     RELIANCE| 2784.50 | 65.2 | 0.081  | 2750  | 2650  | 2500   | 52.4 | 2026-05-31 14:30:45
+     INFY    | 1850.25 | 58.9 | -0.120 | 1820  | 1750  | 1680   | 48.2 | 2026-05-31 14:30:52
+     HDFC    | 2430.10 | 72.1 | 0.150  | 2400  | 2350  | 2300   | 45.8 | 2026-05-31 14:30:59
+     [...]
+ 
+ □ ✓ Data fetch successful
+
+Time: 20-30 seconds
+
+
+STEP 7: TEST CSV EXPORT
+─────────────────────────────────────────────────────────────────────────────
+
+ □ With data loaded in TradingView Screener tab, click "Export CSV" button
+ 
+ □ Popup appears: "Exported to: C:\StockData\TradingView_NSE_2026-05-31.csv"
+ 
+ □ Verify file exists:
+     dir C:\StockData\TradingView_NSE_*.csv
+ 
+ □ Check file contents (open in Excel or notepad):
+     • First line: Symbol,Market,Close,RSI_14,MACD,...
+     • 5 data rows (one per symbol)
+     • All indicator columns populated
+ 
+ □ ✓ CSV export working
+
+Time: 2-3 minutes
+
+
+STEP 8: TEST NIGHTLY DOWNLOAD INTEGRATION
+─────────────────────────────────────────────────────────────────────────────
+
+ □ In PowerShell, run nightly download manually:
+     cd C:\StockData
+     python nightly_download.py
+ 
+ □ Watch output for TradingView section:
+     Look for:
+     [2b/2] Fetching TradingView screener data...
+       Fetching NSE (XX symbols)...
+         → saved N symbols to TradingView_NSE.csv
+       Fetching ASX (XX symbols)...
+         → saved N symbols to TradingView_ASX.csv
+       Fetching US (XX symbols)...
+         → saved N symbols to TradingView_US.csv
+ 
+ □ Script completes normally (no errors in TradingView section)
+ 
+ □ Verify files created:
+     dir C:\StockData\TradingView_*.csv
+ 
+ Expected output:
+     TradingView_ASX.csv (from this run)
+     TradingView_NSE.csv (from this run)
+     TradingView_US.csv  (from this run)
+ 
+ □ ✓ Nightly integration working
+
+Time: 2-5 minutes (depending on symbol count)
+
+
+STEP 9: CUSTOMIZE SYMBOLS (OPTIONAL)
+─────────────────────────────────────────────────────────────────────────────
+
+ □ In Edge Pro TradingView Screener tab:
+ 
+ □ Clear the "Symbols:" field
+ 
+ □ Enter your own watchlist, e.g.:
+     RELIANCE,INFY,TCS,WIPRO,ASIANPAINT
+ 
+ □ Change Market to "ASX" (if testing ASX symbols)
+ 
+ □ Click "Fetch Data"
+ 
+ □ Verify data loads for your custom symbols
+ 
+ □ ✓ Custom symbols working
+
+Time: 2-3 minutes
+
+
+STEP 10: VERIFY TASK SCHEDULER (IF USING SCHEDULED DOWNLOADS)
+─────────────────────────────────────────────────────────────────────────────
+
+ □ If you use Task Scheduler for nightly_download.py:
+ 
+ □ Open Task Scheduler → Find your Edge Pro task
+ 
+ □ No changes needed! TradingView fetch runs automatically
+ 
+ □ After next scheduled run, check:
+     • C:\StockData\logs\nightly_YYYYMMDD.log
+     • Look for "[2b/2] Fetching TradingView screener data..."
+     • Verify TradingView_*.csv files updated
+ 
+ □ ✓ Scheduled integration ready
+
+Time: 1-2 minutes
+
+
+STEP 11: FINAL VERIFICATION
+─────────────────────────────────────────────────────────────────────────────
+
+Summary check:
+
+ □ tvDatafeed installed:
+     python -c "from tvDatafeed import TvDatafeed; print('OK')"
+ 
+ □ Edge Pro runs:
+     uv run edge_pro.py (then Ctrl+C to quit)
+ 
+ □ TradingView tab visible in Edge Pro
+ 
+ □ Data fetch works (Fetch Data button)
+ 
+ □ CSV export works (Export CSV button)
+ 
+ □ nightly_download.py runs:
+     python nightly_download.py (watch for TradingView section)
+ 
+ □ TradingView_*.csv files created
+
+ □ ✓ ALL SYSTEMS GO!
+
+Time: 5-10 minutes
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+TOTAL DEPLOYMENT TIME: ~30-45 minutes (mostly waiting for data fetches)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+
+TROUBLESHOOTING QUICK REFERENCE
+─────────────────────────────────────────────────────────────────────────────
+
+Issue                          | Fix
+───────────────────────────────┼──────────────────────────────────────────────
+tvDatafeed not installed       | uv pip install tvDatafeed --break-system-packages
+TradingView tab not visible    | Check tvDatafeed installed; restart Edge Pro
+"Fetch Data" gives error       | Check symbol validity on TradingView.com
+Slow data fetch (60+ sec)      | Normal! (Rate limiting) Use fewer symbols
+"Symbol not found"             | NSE: no .NS suffix; ASX: no .AX suffix
+CSV export fails               | Check C:\StockData\ write permissions
+
+More help: See SETUP_TRADINGVIEW_INTEGRATION.txt
+
+
+═══════════════════════════════════════════════════════════════════════════════
+✓ Integration complete!  Ready to trade with TradingView data!
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,301 @@
+"""
+═══════════════════════════════════════════════════════════════════════════════
+TRADINGVIEW INTEGRATION - COMPLETE SETUP GUIDE
+═══════════════════════════════════════════════════════════════════════════════
+
+This guide walks you through integrating TradingView data fetching into your
+existing Edge Pro system at C:\StockData\
+
+Files included:
+  1. tradingview_client.py        → Core TradingView API client
+  2. edge_pro.py (MODIFIED)        → Added "TradingView Screener" tab
+  3. nightly_download.py (MODIFIED)→ Added automatic TradingView fetch
+  4. This guide                     → Integration instructions
+
+═══════════════════════════════════════════════════════════════════════════════
+"""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 1: INSTALL DEPENDENCY (1 minute)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# In PowerShell or Command Prompt, run:
+cd C:\StockData
+uv pip install tvDatafeed --break-system-packages
+
+# Expected output:
+# Resolved 1 package
+# Downloaded 1 package
+# Installed 1 package in XXs
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 2: BACKUP YOUR EXISTING FILES (1 minute)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Before replacing, backup your originals:
+cd C:\StockData
+copy edge_pro.py edge_pro_BACKUP.py
+copy nightly_download.py nightly_download_BACKUP.py
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 3: COPY NEW FILES (1 minute)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Copy these files to C:\StockData\:
+#
+#   1. tradingview_client.py           ← NEW (core client)
+#   2. edge_pro.py (modified)          ← REPLACE
+#   3. nightly_download.py (modified)  ← REPLACE
+#
+# Your C:\StockData\ directory should now contain:
+#   ├── edge_pro.py (NEW - with TradingView tab)
+#   ├── nightly_download.py (NEW - with TradingView fetch)
+#   ├── tradingview_client.py (NEW)
+#   ├── Tickers.txt
+#   ├── *.csv (stock data)
+#   ├── benchmarks/
+#   ├── logs/
+#   └── [other existing files]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 4: VERIFY INSTALLATION (2 minutes)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Test that the import works. In PowerShell:
+cd C:\StockData
+python -c "from tradingview_client import TradingViewClient; print('✓ TradingView client loaded')"
+
+# Expected output:
+# ✓ TradingView client loaded
+
+# If you get an error, ensure tvDatafeed is installed:
+uv pip install tvDatafeed --break-system-packages
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 5: LAUNCH EDGE PRO (First test)
+# ─────────────────────────────────────────────────────────────────────────────
+
+cd C:\StockData
+uv run edge_pro.py
+
+# Expected behavior:
+#   1. Edge Pro launches normally with all existing tabs
+#   2. NEW TAB appears: "TradingView Screener" (last tab)
+#   3. Other tabs (Dashboard, Screener, RS Analyser, Risk, Nightly) unchanged
+
+# If TradingView tab doesn't appear:
+#   - tvDatafeed may not be installed → run: uv pip install tvDatafeed --break-system-packages
+#   - tradingview_client.py may not be in C:\StockData\ → copy it there
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 6: TEST TRADINGVIEW SCREENER TAB
+# ─────────────────────────────────────────────────────────────────────────────
+
+# In Edge Pro:
+#
+# 1. Click the "TradingView Screener" tab
+# 2. Verify default values:
+#    - Market: NSE
+#    - Symbols: RELIANCE,INFY,HDFC,ITC,BAJAJFINSV
+# 3. Click "Fetch Data" button
+# 4. Wait 10-20 seconds for data to load
+# 5. You should see 5 rows with columns:
+#    Symbol | Close | RSI | MACD | SMA20 | SMA50 | SMA200 | ATR | Timestamp
+#
+# Example output:
+#    RELIANCE | 2784.50 | 65.2 | 0.0812 | 2750.25 | 2650.40 | 2500.10 | 52.4 | 2026-05-31 14:30:45
+#    INFY     | 1850.25 | 58.9 | -0.120 | 1820.50 | 1750.30 | 1680.20 | 48.2 | 2026-05-31 14:30:52
+#    [...]
+
+# If "Fetch Data" fails:
+#   Error 1: "ModuleNotFoundError: No module named 'tvDatafeed'"
+#     → Fix: uv pip install tvDatafeed --break-system-packages
+#   
+#   Error 2: "Symbol not found" (e.g., "RELIANCE")
+#     → Fix: Use exact symbol from TradingView (check syminfo on TradingView chart)
+#     → NSE symbols should be uppercase, no suffix
+#   
+#   Error 3: Timeout after 20+ seconds
+#     → This is normal for first fetch or many symbols
+#     → Rate limiting is in effect (1 symbol per 2 seconds)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 7: TEST CSV EXPORT
+# ─────────────────────────────────────────────────────────────────────────────
+
+# After fetching data in the TradingView Screener tab:
+#
+# 1. Click "Export CSV" button
+# 2. A message appears: "Exported to: C:\StockData\TradingView_NSE_2026-05-31.csv"
+# 3. Open the CSV file to verify data is saved
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 8: TEST NIGHTLY DOWNLOAD INTEGRATION
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The modified nightly_download.py now automatically fetches TradingView data.
+# To test:
+#
+# 1. Manual test (in PowerShell):
+#    cd C:\StockData
+#    python nightly_download.py
+#
+# 2. Expected output in logs:
+#    [2b/2] Fetching TradingView screener data...
+#      Fetching NSE (up to 20 symbols)...
+#        → saved N symbols to TradingView_NSE.csv
+#      Fetching ASX (up to 10 symbols)...
+#        → saved N symbols to TradingView_ASX.csv
+#      Fetching US (up to 10 symbols)...
+#        → saved N symbols to TradingView_US.csv
+#
+# 3. Verify files created:
+#    C:\StockData\TradingView_NSE.csv  ← Top 20 NSE stocks from passed filter
+#    C:\StockData\TradingView_ASX.csv  ← ASX stocks from passed filter
+#    C:\StockData\TradingView_US.csv   ← US stocks from passed filter
+
+# If nightly_download TradingView fetch doesn't run:
+#   - tvDatafeed may not be installed in your uv environment
+#   - Check log: C:\StockData\logs\nightly_YYYYMMDD.log
+#   - Verify no errors in "Fetching TradingView" section
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 9: SCHEDULE NIGHTLY_DOWNLOAD WITH TRADINGVIEW (Optional)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# If you use Windows Task Scheduler for nightly_download.py:
+#
+# The TradingView fetch will run automatically as part of the nightly batch.
+# No changes needed to your Task Scheduler setup.
+#
+# TradingView data will be saved to:
+#   C:\StockData\TradingView_NSE.csv   (updated nightly)
+#   C:\StockData\TradingView_ASX.csv   (updated nightly)
+#   C:\StockData\TradingView_US.csv    (updated nightly)
+#
+# These files can then be loaded into your trading system or analyzed separately.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 10: CUSTOMIZE SYMBOLS AND MARKETS
+# ─────────────────────────────────────────────────────────────────────────────
+
+# In Edge Pro's TradingView Screener tab:
+#
+# Change the default symbols:
+#   1. Clear the "Symbols:" field
+#   2. Enter your own: RELIANCE,INFY,TCS,WIPRO,INFOSYS
+#   3. Change Market to ASX or US if needed
+#   4. Click "Fetch Data"
+#
+# Example configurations:
+#
+#   NSE (Indian stocks):
+#     RELIANCE,INFY,TCS,WIPRO,ASIANPAINT,TITAN,ITC,HDFC,HDFCBANK,ICICIBANK
+#
+#   ASX (Australian stocks):
+#     BHP,CBA,NAB,WBC,AMP,MQG,CSL,WES,FMG,RIO
+#
+#   US (US stocks):
+#     AAPL,MSFT,GOOGL,NVDA,TSLA,META,AMZN,JPM,V,WMT
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TROUBLESHOOTING
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Issue: TradingView tab doesn't appear in Edge Pro
+# Cause: tvDatafeed not installed or tradingview_client.py not found
+# Fix:
+#   1. Check installation: uv pip list | findstr tvDatafeed
+#   2. Install if missing: uv pip install tvDatafeed --break-system-packages
+#   3. Verify file: ls C:\StockData\tradingview_client.py
+#   4. Restart Edge Pro
+
+# Issue: "Fetch Data" button gives "tvDatafeed not installed" error
+# Fix:  uv pip install tvDatafeed --break-system-packages
+
+# Issue: "Fetch Data" returns no data or "Symbol not found"
+# Cause: Symbol doesn't exist on TradingView or wrong exchange
+# Fix:
+#   1. Check symbol on TradingView.com (chart)
+#   2. Use exact symbol name (case-sensitive on some exchanges)
+#   3. NSE: no suffix (RELIANCE, not RELIANCE.NS)
+#   4. ASX: no suffix (BHP, not BHP.AX)
+#   5. US: uppercase (AAPL, MSFT, etc.)
+
+# Issue: Data loads very slowly (60+ seconds)
+# Cause: Too many symbols or rate limiting
+# Fix:
+#   1. Reduce number of symbols to 5-10
+#   2. Rate limit is 1 symbol every 2 seconds, so:
+#      - 5 symbols ≈ 10 seconds
+#      - 10 symbols ≈ 20 seconds
+#      - 30 symbols ≈ 60 seconds
+#   3. For many symbols, use nightly_download.py (batch overnight)
+
+# Issue: CSV export not working
+# Fix:
+#   1. Ensure you have fetch data first
+#   2. Check C:\StockData\ directory has write permissions
+#   3. Verify no file locks on C:\StockData\
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEATURES
+# ─────────────────────────────────────────────────────────────────────────────
+
+# TradingView Screener Tab in Edge Pro:
+#   ✓ Real-time data fetch (on-demand)
+#   ✓ Multi-market support (NSE, ASX, US)
+#   ✓ 20+ technical indicators (RSI, MACD, ATR, Bollinger Bands, MAs)
+#   ✓ CSV export for further analysis
+#   ✓ Automatic rate limiting (respects TradingView limits)
+#
+# Nightly Download Integration:
+#   ✓ Automatic TradingView data fetch as part of batch
+#   ✓ Saves to C:\StockData\TradingView_*.csv
+#   ✓ Fetches top passing symbols from each market
+#   ✓ Non-blocking (doesn't slow down other downloads)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INDICATORS AVAILABLE
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Price & Volume:
+#   Close, High_52w, Low_52w
+#
+# Momentum:
+#   RSI_14, MACD, MACD_Signal, MACD_Histogram
+#
+# Trend:
+#   SMA_20, SMA_50, SMA_200 (Simple Moving Averages)
+#   EMA_12, EMA_26 (Exponential Moving Averages)
+#
+# Volatility:
+#   ATR_14 (Average True Range — use for stop-loss placement)
+#   BB_Upper, BB_Middle, BB_Lower (Bollinger Bands)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEXT STEPS
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1. ✓ Install tvDatafeed: uv pip install tvDatafeed --break-system-packages
+# 2. ✓ Copy files to C:\StockData\
+# 3. ✓ Launch Edge Pro and test TradingView Screener tab
+# 4. ✓ Test CSV export
+# 5. ✓ Run nightly_download.py to test batch TradingView fetch
+# 6. → Integrate into your trading workflow
+#    → Use TradingView indicators for confluence signals
+#    → Combine with existing Definedge signals for multi-source confirmation
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SUPPORT / ISSUES
+# ─────────────────────────────────────────────────────────────────────────────
+
+# If you encounter any issues:
+# 1. Check the log file: C:\StockData\logs\nightly_YYYYMMDD.log
+# 2. Verify tvDatafeed installation: python -c "import tvDatafeed; print('OK')"
+# 3. Test tradingview_client directly: python -c "from tradingview_client import TradingViewClient; print('OK')"
+# 4. Check that symbols exist on TradingView.com
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# You're all set! Enjoy real-time TradingView data in Edge Pro!
+# ═══════════════════════════════════════════════════════════════════════════════
