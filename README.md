@@ -1,6 +1,11 @@
-# Edge Pro — Positional Trading System
+# Edge Pro - Positional Trading System
 
 A desktop application for multi-market positional trading analysis. Covers NSE/BSE (India), ASX (Australia), and US equities. The UI reads exclusively from local CSVs — no network calls at runtime.
+Scripts need to be run in the order below:
+
+a) Once--> python reorganize.py (Clean folder structure)
+b) Sunday Morning  --> FetchAndDownload.bat (Download all stocks)
+c) Sunday Morning --> EdgePro.bat (Launch trading app)
 
 ---
 
